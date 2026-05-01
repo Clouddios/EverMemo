@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EverMemo</title>
+  <style>
+    body {
+      font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      width: 350px;
+      margin: 0;
+      padding: 16px;
+      background-color: #f8f9fa;
+      color: #333;
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 16px;
+      color: #1a1a1a;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 8px;
+    }
+    .section { margin-bottom: 16px; }
+    
+    .color-picker { display: flex; gap: 12px; margin-top: 8px; }
+    .color-option {
+      width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+      border: 2px solid transparent; transition: transform 0.2s, border-color 0.2s;
+    }
+    .color-option:hover { transform: scale(1.1); }
+    .color-option.selected { border-color: #333; box-shadow: 0 0 0 2px rgba(0,0,0,0.1); }
+    .bg-yellow { background-color: #fff000; }
+    .bg-green { background-color: #00ff80; }
+    .bg-blue { background-color: #00bfff; }
+    
+    .tabs { display: flex; border-bottom: 1px solid #ddd; margin-bottom: 12px; }
+    .tab-btn {
+      flex: 1; padding: 8px; background: none; border: none; cursor: pointer;
+      font-size: 14px; color: #666; border-bottom: 2px solid transparent;
+      transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .tab-btn svg { width: 16px; height: 16px; fill: currentColor; }
+    .tab-btn:hover { color: #333; }
+    .tab-btn.active { color: #333; border-bottom-color: #333; font-weight: bold; }
+    
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .highlights-list { list-style: none; padding: 0; margin: 0; max-height: 220px; overflow-y: auto; }
+    .page-group { margin-bottom: 12px; }
+    .page-url {
+      font-size: 11px; color: #0066cc; text-decoration: none; display: block;
+      margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .page-url:hover { text-decoration: underline; }
+    
+    .highlight-item {
+      background: #fff; padding: 8px; border-radius: 6px; margin-bottom: 8px;
+      font-size: 13px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex;
+      justify-content: space-between; align-items: center; border-left: 4px solid transparent;
+    }
+    .highlight-item.hl-yellow { border-left-color: #fff000; }
+    .highlight-item.hl-green { border-left-color: #00ff80; }
+    .highlight-item.hl-blue { border-left-color: #00bfff; }
+    
+    .text-preview {
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; cursor: pointer;
+    }
+    .text-preview:hover { text-decoration: underline; color: #0066cc; }
+    
+    .delete-btn {
+      background: none; border: none; color: #999; cursor: pointer; padding: 4px;
+      border-radius: 4px; display: flex; align-items: center; justify-content: center;
+    }
+    .delete-btn svg { width: 14px; height: 14px; fill: currentColor; }
+    .delete-btn:hover { color: #e53935; background-color: #ffebee; }
+    
+    .empty-state { font-size: 13px; color: #777; text-align: center; padding: 16px 0; }
+
+    .btn-primary, .btn-secondary {
+      flex: 1; padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: 4px;
+      cursor: pointer; border: none; transition: opacity 0.2s, background-color 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .btn-primary svg, .btn-secondary svg { width: 14px; height: 14px; fill: currentColor; }
+    .btn-primary { background-color: #1a1a1a; color: #fff; }
+    .btn-primary:hover { background-color: #333; }
+    .btn-secondary { background-color: #e0e0e0; color: #333; }
+    .btn-secondary:hover { background-color: #d0d0d0; }
+  </style>
+</head>
+<body>
+  <div class="section">
+    <h2>Cor de Atalho Rápido</h2>
+    <div class="color-picker" id="colorPicker">
+      <div class="color-option bg-yellow" data-color="yellow" title="Amarelo"></div>
+      <div class="color-option bg-green" data-color="green" title="Verde"></div>
+      <div class="color-option bg-blue" data-color="blue" title="Azul"></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-target="tab-current">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+      Nesta Página
+    </button>
+    <button class="tab-btn" data-target="tab-all">
+      <svg viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+      Todas as Páginas
+    </button>
+  </div>
+
+  <div id="tab-current" class="tab-content active">
+    <ul class="highlights-list" id="highlightsList"></ul>
+  </div>
+
+  <div id="tab-all" class="tab-content">
+    <div class="highlights-list" id="allHighlightsList"></div>
+  </div>
+
+  <div class="section" style="margin-top: 16px; border-top: 1px solid #e0e0e0; padding-top: 12px; margin-bottom: 0;">
+    <h2 style="font-size: 14px;">Backup e Exportação</h2>
+    <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+      <button id="btnExportJson" class="btn-secondary" title="Baixar JSON">
+        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> JSON
+      </button>
+      <button id="btnExportTxt" class="btn-secondary" title="Baixar TXT">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg> TXT
+      </button>
+      <button id="btnImport" class="btn-primary" style="flex: 2;">
+        <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg> Importar
+      </button>
+      <input type="file" id="fileImport" accept=".json" style="display: none;">
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

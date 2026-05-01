@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "EverMemo",
+  "version": "1.0.0",
+  "description": "Destaca textos na web com múltiplas cores de forma persistente.",
+  "permissions": [
+    "contextMenus",
+    "storage",
+    "activeTab"
+  ],
+  "icons": {
+    "128": "icon.png"
+  },
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "css": [
+        "style.css"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Configurações de Destaque",
+    "default_icon": "icon.png"
+  },
+  "commands": {
+    "highlight_text": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+H",
+        "mac": "Command+Shift+H"
+      },
+      "description": "Aplicar a cor de destaque atual ao texto selecionado"
+    }
+  }
+}
