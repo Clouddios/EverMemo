@@ -1,33 +1,13 @@
 /* Classes para os destaques */
-.hl-yellow {
-  background-color: rgba(255, 240, 0, 0.65) !important;
-  color: inherit !important;
-  border-radius: 2px;
-  box-shadow: 0 1px 3px rgba(255, 240, 0, 0.4);
-  transition: background-color 0.2s ease;
-  padding: 2px 0;
-}
-
-.hl-green {
-  background-color: rgba(0, 255, 128, 0.55) !important;
-  color: inherit !important;
-  border-radius: 2px;
-  box-shadow: 0 1px 3px rgba(0, 255, 128, 0.4);
-  transition: background-color 0.2s ease;
-  padding: 2px 0;
-}
-
-.hl-blue {
-  background-color: rgba(0, 191, 255, 0.55) !important;
-  color: inherit !important;
-  border-radius: 2px;
-  box-shadow: 0 1px 3px rgba(0, 191, 255, 0.4);
-  transition: background-color 0.2s ease;
-  padding: 2px 0;
-}
+.hl-yellow { background-color: rgba(255, 240, 0, 0.65) !important; color: inherit !important; border-radius: 2px; box-shadow: 0 1px 3px rgba(255, 240, 0, 0.4); transition: background-color 0.2s ease; padding: 2px 0; }
+.hl-green { background-color: rgba(0, 255, 128, 0.55) !important; color: inherit !important; border-radius: 2px; box-shadow: 0 1px 3px rgba(0, 255, 128, 0.4); transition: background-color 0.2s ease; padding: 2px 0; }
+.hl-blue { background-color: rgba(0, 191, 255, 0.55) !important; color: inherit !important; border-radius: 2px; box-shadow: 0 1px 3px rgba(0, 191, 255, 0.4); transition: background-color 0.2s ease; padding: 2px 0; }
+.hl-pink { background-color: rgba(255, 105, 180, 0.65) !important; color: inherit !important; border-radius: 2px; box-shadow: 0 1px 3px rgba(255, 105, 180, 0.4); transition: background-color 0.2s ease; padding: 2px 0; }
+.hl-orange { background-color: rgba(255, 152, 0, 0.65) !important; color: inherit !important; border-radius: 2px; box-shadow: 0 1px 3px rgba(255, 152, 0, 0.4); transition: background-color 0.2s ease; padding: 2px 0; }
+.hl-purple { background-color: rgba(156, 39, 176, 0.65) !important; color: inherit !important; border-radius: 2px; box-shadow: 0 1px 3px rgba(156, 39, 176, 0.4); transition: background-color 0.2s ease; padding: 2px 0; }
 
 /* Hover effect para feedback visual interativo */
-.hl-yellow:hover, .hl-green:hover, .hl-blue:hover {
+.hl-yellow:hover, .hl-green:hover, .hl-blue:hover, .hl-pink:hover, .hl-orange:hover, .hl-purple:hover {
   filter: brightness(0.9);
   cursor: pointer;
 }

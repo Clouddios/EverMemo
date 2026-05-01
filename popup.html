@@ -22,7 +22,7 @@
     }
     .section { margin-bottom: 16px; }
     
-    .color-picker { display: flex; gap: 12px; margin-top: 8px; }
+    .color-picker { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
     .color-option {
       width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
       border: 2px solid transparent; transition: transform 0.2s, border-color 0.2s;
@@ -32,6 +32,9 @@
     .bg-yellow { background-color: #fff000; }
     .bg-green { background-color: #00ff80; }
     .bg-blue { background-color: #00bfff; }
+    .bg-pink { background-color: #ff69b4; }
+    .bg-orange { background-color: #ff9800; }
+    .bg-purple { background-color: #9c27b0; }
     
     .tabs { display: flex; border-bottom: 1px solid #ddd; margin-bottom: 12px; }
     .tab-btn {
@@ -62,6 +65,9 @@
     .highlight-item.hl-yellow { border-left-color: #fff000; }
     .highlight-item.hl-green { border-left-color: #00ff80; }
     .highlight-item.hl-blue { border-left-color: #00bfff; }
+    .highlight-item.hl-pink { border-left-color: #ff69b4; }
+    .highlight-item.hl-orange { border-left-color: #ff9800; }
+    .highlight-item.hl-purple { border-left-color: #9c27b0; }
     
     .text-preview {
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; cursor: pointer;
@@ -77,6 +83,7 @@
     
     .empty-state { font-size: 13px; color: #777; text-align: center; padding: 16px 0; }
 
+    /* Botões de Backup */
     .btn-primary, .btn-secondary {
       flex: 1; padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: 4px;
       cursor: pointer; border: none; transition: opacity 0.2s, background-color 0.2s;
@@ -96,6 +103,9 @@
       <div class="color-option bg-yellow" data-color="yellow" title="Amarelo"></div>
       <div class="color-option bg-green" data-color="green" title="Verde"></div>
       <div class="color-option bg-blue" data-color="blue" title="Azul"></div>
+      <div class="color-option bg-pink" data-color="pink" title="Rosa"></div>
+      <div class="color-option bg-orange" data-color="orange" title="Laranja"></div>
+      <div class="color-option bg-purple" data-color="purple" title="Roxo"></div>
     </div>
   </div>
 

@@ -1,23 +1,29 @@
 // Criação do Menu de Contexto
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: 'highlight_parent',
-    title: 'Destacar Texto',
-    contexts: ['selection']
-  });
-
-  const colors = [
-    { id: 'yellow', title: 'Amarelo' },
-    { id: 'green', title: 'Verde' },
-    { id: 'blue', title: 'Azul' }
-  ];
-
-  colors.forEach(color => {
+  // Sempre remove os antigos para evitar duplicação no recarregamento
+  chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
-      id: `highlight_${color.id}`,
-      parentId: 'highlight_parent',
-      title: color.title,
+      id: 'highlight_parent',
+      title: 'Destacar Texto',
       contexts: ['selection']
+    });
+
+    const colors = [
+      { id: 'yellow', title: '🟡 Amarelo' },
+      { id: 'green', title: '🟢 Verde' },
+      { id: 'blue', title: '🔵 Azul' },
+      { id: 'pink', title: '🩷 Rosa' },
+      { id: 'orange', title: '🟠 Laranja' },
+      { id: 'purple', title: '🟣 Roxo' }
+    ];
+
+    colors.forEach(color => {
+      chrome.contextMenus.create({
+        id: `highlight_${color.id}`,
+        parentId: 'highlight_parent',
+        title: color.title,
+        contexts: ['selection']
+      });
     });
   });
 
@@ -33,12 +39,16 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId.startsWith('highlight_')) {
     const color = info.menuItemId.split('_')[1];
+    
+    // NOVIDADE: Ao usar qualquer cor pelo botão direito, ela vira a nova cor padrão do atalho!
+    chrome.storage.local.set({ defaultColor: color });
+
     chrome.tabs.sendMessage(tab.id, {
       action: 'apply_highlight',
       color: color
     }, () => {
       if (chrome.runtime.lastError) {
-        console.warn("Aba não suportada para destaque (ex: página do sistema ou configurações).");
+        // Ignorado silenciosamente para não poluir o painel de extensões
       }
     });
   }
@@ -56,7 +66,7 @@ chrome.commands.onCommand.addListener((command) => {
             color: color
           }, () => {
             if (chrome.runtime.lastError) {
-              console.warn("Aba não suportada para destaque (ex: página do sistema ou configurações).");
+              // Ignorado silenciosamente
             }
           });
         });

@@ -41,7 +41,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (mark) {
       mark.scrollIntoView({ behavior: 'smooth', block: 'center' });
       
-      // Efeito visual (Pulsar) para mostrar onde o destaque está
       const originalTransition = mark.style.transition;
       mark.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease';
       mark.style.transform = 'scale(1.15)';
@@ -72,7 +71,6 @@ function highlightSelection(color) {
   const xpath = getXPath(element);
   const highlightId = 'hl_' + Date.now() + Math.floor(Math.random() * 1000);
 
-  // Apply visual highlight
   const mark = document.createElement('mark');
   mark.className = `hl-${color}`;
   mark.dataset.hlId = highlightId;
@@ -82,7 +80,10 @@ function highlightSelection(color) {
     range.insertNode(mark);
   } catch (e) {
     console.error("Falha ao destacar (seleção complexa):", e);
-    return; // Ignore if cannot wrap simple node
+    // Em seleções complexas (cruzando parágrafos inteiros), é difícil injetar o HTML.
+    // Ignoramos a injeção ao invés de quebrar, mas vamos tentar salvar se quiser.
+    // Aqui retornamos para não salvar marcação "falsa" na interface.
+    return;
   }
 
   selection.removeAllRanges();
@@ -106,51 +107,134 @@ function saveHighlight(highlightData) {
   });
 }
 
-// Restaura highlights percorrendo os nós de texto para não quebrar eventos DOM
+let unrecoveredHighlights = [];
+
+// Restaura highlights com suporte a páginas dinâmicas (SPA como React/Vue)
 function restoreHighlights() {
   const pageUrl = window.location.href.split('#')[0];
   chrome.storage.local.get([pageUrl], (result) => {
     const highlights = result[pageUrl];
     if (highlights && highlights.length > 0) {
-      highlights.forEach(hl => {
-        const parentNode = getNodeFromXPath(hl.xpath);
-        if (parentNode) {
-          highlightTextInNode(parentNode, hl.text, hl.color, hl.id);
-        }
-      });
+      unrecoveredHighlights = [...highlights];
+      attemptRestore();
     }
   });
 }
 
-// Lógica de injeção segura que não quebra o InnerHTML de outros elementos
-function highlightTextInNode(element, text, color, id) {
-  if (text.trim() === "") return false;
-  
-  const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
-  const textNodes = [];
-  let currentNode;
-  
-  while (currentNode = treeWalker.nextNode()) {
-    textNodes.push(currentNode);
+function attemptRestore() {
+  unrecoveredHighlights = unrecoveredHighlights.filter(hl => {
+    // Tenta encontrar pelo XPath exato, senão busca no body inteiro (fallback)
+    const parentNode = getNodeFromXPath(hl.xpath) || document.body;
+    const success = highlightTextInNode(parentNode, hl.text, hl.color, hl.id);
+    return !success; // Mantém no array apenas se NÃO teve sucesso
+  });
+}
+
+// Observa mudanças no DOM para restaurar textos que demoram a carregar (ex: Twitter, Notion)
+const observer = new MutationObserver(() => {
+  if (unrecoveredHighlights.length > 0) {
+    attemptRestore();
+  }
+});
+
+// Encontrar indices ignorando espaçamentos ou quebras de linha complexas
+function findMatchIndices(fullText, searchText) {
+  let start = fullText.indexOf(searchText);
+  if (start !== -1) return { start, end: start + searchText.length };
+
+  start = fullText.toLowerCase().indexOf(searchText.toLowerCase());
+  if (start !== -1) return { start, end: start + searchText.length };
+
+  const strip = str => str.replace(/\s+/g, '');
+  const strippedSearch = strip(searchText).toLowerCase();
+  if (!strippedSearch) return null;
+
+  let strippedFull = '';
+  let indexMap = [];
+  for (let i = 0; i < fullText.length; i++) {
+    if (!/\s/.test(fullText[i])) {
+      strippedFull += fullText[i].toLowerCase();
+      indexMap.push(i);
+    }
   }
 
-  for (let node of textNodes) {
-    const index = node.nodeValue.indexOf(text);
-    if (index !== -1) {
-      const mark = document.createElement('mark');
-      mark.className = `hl-${color}`;
-      mark.dataset.hlId = id;
+  let strippedStart = strippedFull.indexOf(strippedSearch);
+  if (strippedStart !== -1) {
+    let startOrig = indexMap[strippedStart];
+    let endOrig = indexMap[strippedStart + strippedSearch.length - 1] + 1;
+    return { start: startOrig, end: endOrig };
+  }
+  return null;
+}
 
-      const range = document.createRange();
-      range.setStart(node, index);
-      range.setEnd(node, index + text.length);
-      
+// Lógica de injeção resiliente baseada em índices de texto real (ignora tags ocultas)
+function highlightTextInNode(element, text, color, id) {
+  if (text.trim() === "") return false;
+  if (!element || element.nodeType !== 1) return false;
+  
+  // Evitar duplicidade caso o MutationObserver dispare duas vezes
+  if (element.querySelector(`mark[data-hl-id="${id}"]`)) return true;
+
+  const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+  const textNodes = [];
+  let fullText = "";
+  
+  let currentNode;
+  while (currentNode = treeWalker.nextNode()) {
+    // Ignorar scripts e styles
+    if (currentNode.parentNode && (currentNode.parentNode.tagName === 'SCRIPT' || currentNode.parentNode.tagName === 'STYLE')) continue;
+    textNodes.push(currentNode);
+    fullText += currentNode.nodeValue;
+  }
+
+  const match = findMatchIndices(fullText, text);
+  if (!match) return false;
+
+  const startIndex = match.start;
+  const endIndex = match.end;
+
+  let startNode, startOffset, endNode, endOffset;
+  let currentIndex = 0;
+
+  for (let node of textNodes) {
+    const nodeLength = node.nodeValue.length;
+    if (!startNode && startIndex >= currentIndex && startIndex < currentIndex + nodeLength) {
+      startNode = node;
+      startOffset = startIndex - currentIndex;
+    }
+    if (!endNode && endIndex > currentIndex && endIndex <= currentIndex + nodeLength) {
+      endNode = node;
+      endOffset = endIndex - currentIndex;
+    }
+    currentIndex += nodeLength;
+  }
+
+  if (startNode && endNode) {
+    const range = document.createRange();
+    range.setStart(startNode, startOffset);
+    range.setEnd(endNode, endOffset);
+
+    const mark = document.createElement('mark');
+    mark.className = `hl-${color}`;
+    mark.dataset.hlId = id;
+
+    try {
+      mark.appendChild(range.extractContents());
+      range.insertNode(mark);
+      return true; 
+    } catch (e) {
+      // Se quebrar regras de HTML cruzando elementos em bloco, usa fallback super seguro:
       try {
-        mark.appendChild(range.extractContents());
-        range.insertNode(mark);
-        return true; 
-      } catch (e) {
-        // Silently continue se não der para inserir
+        const fallbackRange = document.createRange();
+        fallbackRange.selectNodeContents(startNode);
+        const fallbackMark = document.createElement('mark');
+        fallbackMark.className = `hl-${color}`;
+        fallbackMark.dataset.hlId = id;
+        fallbackMark.appendChild(fallbackRange.extractContents());
+        fallbackRange.insertNode(fallbackMark);
+        return true;
+      } catch (err) {
+        return false;
       }
     }
   }
@@ -158,7 +242,11 @@ function highlightTextInNode(element, text, color, id) {
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', restoreHighlights);
+  document.addEventListener('DOMContentLoaded', () => {
+    restoreHighlights();
+    observer.observe(document.body, { childList: true, subtree: true });
+  });
 } else {
   restoreHighlights();
+  observer.observe(document.body, { childList: true, subtree: true });
 }

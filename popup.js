@@ -21,24 +21,33 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // 2. Carregar cor padrão
-  chrome.storage.local.get(['defaultColor'], (result) => {
-    const defaultColor = result.defaultColor || 'yellow';
-    updateColorSelection(defaultColor);
+  function reloadDefaultColor() {
+    chrome.storage.local.get(['defaultColor'], (result) => {
+      const defaultColor = result.defaultColor || 'yellow';
+      updateColorSelection(defaultColor);
+    });
+  }
+  reloadDefaultColor();
+
+  // Escuta mudanças no storage (ex: mudou a cor pelo menu de contexto) para atualizar o UI do popup se ele estiver aberto
+  chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'local' && changes.defaultColor) {
+      updateColorSelection(changes.defaultColor.newValue);
+    }
   });
 
-  // 3. Mudar cor padrão
+  // 3. Mudar cor padrão ao clicar na bolinha
   colorOptions.forEach(option => {
     option.addEventListener('click', () => {
       const color = option.dataset.color;
-      chrome.storage.local.set({ defaultColor: color }, () => {
-        updateColorSelection(color);
-      });
+      chrome.storage.local.set({ defaultColor: color });
     });
   });
 
   function updateColorSelection(selectedColor) {
     colorOptions.forEach(opt => opt.classList.remove('selected'));
-    document.querySelector(`.color-option[data-color="${selectedColor}"]`).classList.add('selected');
+    const optToSelect = document.querySelector(`.color-option[data-color="${selectedColor}"]`);
+    if(optToSelect) optToSelect.classList.add('selected');
   }
 
   // 4. Carregar destaques da aba atual
@@ -118,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Se estiver na aba certa, scrollar até a marcação
             chrome.tabs.sendMessage(tabs[0].id, { action: 'scroll_to_highlight', id: hl.id }, () => {
               if (chrome.runtime.lastError) {
-                console.warn("Aba não suportada ou não injetada.");
+                // Ignorado silenciosamente
               }
             });
           } else {
@@ -196,7 +205,15 @@ document.addEventListener('DOMContentLoaded', () => {
           txtContent += `🔗 Página: ${key}\n`;
           txtContent += `---------------------------------\n`;
           value.forEach(hl => {
-            const cor = hl.color === 'yellow' ? 'Amarelo' : (hl.color === 'green' ? 'Verde' : 'Azul');
+            const coresMap = {
+               'yellow': 'Amarelo',
+               'green': 'Verde',
+               'blue': 'Azul',
+               'pink': 'Rosa',
+               'orange': 'Laranja',
+               'purple': 'Roxo'
+            };
+            const cor = coresMap[hl.color] || hl.color;
             txtContent += `[${cor}] "${hl.text}"\n\n`;
           });
         }
